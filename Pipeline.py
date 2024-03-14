@@ -28,7 +28,7 @@ class Pipeline:
             self.steps[i].content = self.steps[i - 1].content
             self.steps[i - 1].content = None
 
-        if input_list and (self.tickCount == 1 or self.steps[-1].content is not None):
+        if input_list:
             self.steps[0].content = input_list.pop()
 
         self.pre_tick()
@@ -54,15 +54,17 @@ class Step:
 
 
 class MultiplicationSet:
-    def __init__(self, multiplicand, factor, partial_sum):
+    def __init__(self, multiplicand, factor, partial_multiplication, partial_sum):
         self.multiplicand = multiplicand
         self.factor = factor
+        self.partial_multiplication = partial_multiplication
         self.partial_sum = partial_sum
 
 
 class MultiplicationStep(Step):
     def do_specific_work(self, input):
-        new_partial_sum = input.partial_sum + (input.factor if input.multiplicand[-1] else Binary16.ZERO)
         new_multiplicand = input.multiplicand >> 1
+        new_partial_multiplication = new_multiplicand if input.factor[0] else Binary16.ZERO
+        new_partial_sum = input.partial_sum + new_partial_multiplication
         new_factor = input.factor << 1
-        return MultiplicationSet(new_multiplicand, new_factor, new_partial_sum)
+        return MultiplicationSet(new_multiplicand, new_factor, new_partial_multiplication, new_partial_sum)

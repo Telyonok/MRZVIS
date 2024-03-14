@@ -18,8 +18,10 @@ class InputData:
 
     def random_init(self):
         self.m = self.user_input_m()
-        self.number_list1 = [Binary8.generate_random_number(8) for _ in range(self.m)]
-        self.number_list2 = [Binary16.generate_random_number(8) for _ in range(self.m)]
+        self.initial_number_list1 = [Binary8.generate_random_number(8) for _ in range(self.m)]
+        self.initial_number_list2 = [Binary8.generate_random_number(8) for _ in range(self.m)]
+        self.number_list1 = [number.lshift_to_16(8) for number in self.initial_number_list1]
+        self.number_list2 = self.initial_number_list2
 
     def file_init(self, filename):
         lines = read_file(filename)
@@ -33,13 +35,15 @@ class InputData:
         if m <= 0:
             raise Exception("Ошибка: m должно быть положительным числом.")
         self.m = m
-        self.number_list1 = validate_number_list([number for number in lines[1].replace(",", " ").split()], m)
+        self.number_list1 = validate_number_list([number << 8 for number in lines[1].replace(",", " ").split()], m)
         self.number_list2 = validate_number_list([number for number in lines[2].replace(",", " ").split()], m)
 
     def user_init(self):
         self.m = self.user_input_m()
-        self.number_list1 = self.user_input_number_list(f"Введите первый список (состоит из {self.m} двоичных чисел 8-го разряда). Вводите числа через пробелы или запятые:", self.m)
-        self.number_list2 = self.user_input_number_list(f"Введите второй список (состоит из {self.m} двоичных чисел 8-го разряда). Вводите числа через пробелы или запятые:", self.m)
+        self.initial_number_list1 = self.user_input_number_list(f"Введите первый список (состоит из {self.m} двоичных чисел 8-го разряда). Вводите числа через пробелы или запятые:", self.m)
+        self.initial_number_list2 = self.user_input_number_list(f"Введите первый список (состоит из {self.m} двоичных чисел 8-го разряда). Вводите числа через пробелы или запятые:", self.m)
+        self.number_list1 = [number.lshift_to_16(8) for number in self.initial_number_list1]
+        self.number_list2 = self.initial_number_list2
     
     @staticmethod
     def user_input_m():
@@ -110,13 +114,13 @@ def main():
         else:
             data.user_init()
 
-        #print("Список множимых чисел:")
-        #for number in data.number_list1:
-        #    print(number)
+        print("Список множимых чисел:")
+        for number in data.initial_number_list1:
+            print(number)
 
-        #print("Список множителей:")
-        #for number in data.number_list2:
-        #    print(number)
+        print("Список множителей:")
+        for number in data.initial_number_list2:
+            print(number)
 
         pipeline = Pipeline(*[MultiplicationStep() for _ in range(pipeline_steps)])
 
@@ -124,24 +128,25 @@ def main():
             print("Шаг", pipeline.tickCount)
             for i, step in enumerate(pipeline.steps):
                 content = step.content
-                print(f"{i}. Множимое: {content.multiplicand if content else ''}   Множитель: {content.factor if content else ''}   Частичная сумма: {content.partial_sum if content else ''}")
+                print(f"{i}. Множимое: {content.multiplicand if content else ''}   Множитель: {content.factor if content else ''}   Частичное произведение: {content.partial_multiplication if content else ''}   Частичная сумма: {content.partial_sum if content else ''}")
             
             input("Нажмите Enter для перехода к следующему шагу...")
 
-        #pipeline.post_tick = post_tick
+        pipeline.post_tick = post_tick
 
         multiplication_triples = []
         for i in range(data.m):
             multiplicand = data.number_list1[i]
             factor = data.number_list2[i]
             partial_sum = Binary16.ZERO
-            multiplication_triples.append(MultiplicationSet(multiplicand, factor, partial_sum))
+            partial_multiplication = Binary16.ZERO
+            multiplication_triples.append(MultiplicationSet(multiplicand, factor, partial_multiplication, partial_sum))
         dt = datetime.datetime.now()
         res = pipeline.run(*multiplication_triples)
         print(datetime.datetime.now() - dt)
-        #print('Результаты:')
-        #for item in res:
-        #    print(item.partial_sum)
+        print('Результаты:')
+        for item in res:
+            print(item.partial_sum)
 
     except Exception as e:
         print(f"Ошибка: {e} ({type(e).__name__})")

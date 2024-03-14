@@ -97,6 +97,13 @@ class Binary8:
 
     def __lshift__(self, places):
         copy = self.number.copy()
+        binary8 = Binary8(copy)
+        for _ in range(places):
+            binary8.number = binary8.number[1:] + [False]
+        return binary8
+    
+    def lshift_to_16(self, places):
+        copy = self.number.copy()
         binary16 = Binary16(copy)
         for _ in range(places):
             binary16.number = binary16.number[1:] + [False]
